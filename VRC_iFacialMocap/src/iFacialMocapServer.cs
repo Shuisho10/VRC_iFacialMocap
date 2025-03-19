@@ -86,7 +86,7 @@ namespace iFacialMocapTrackingModule
 
 
         /// <summary>
-        /// Reads and parses the data recieved by the UDP Client, 
+        /// Reads and parses the data received by the UDP Client, 
         /// storing the facial data result in the Face Data attributes.
         /// </summary>
 
@@ -102,7 +102,7 @@ namespace iFacialMocapTrackingModule
                     if (isTracking==false)
                     {
                         isTracking = true;
-                        logger.LogInformation("Tracking restablished");
+                        logger.LogInformation("Tracking reestablished");
                     }
                     string[] blendData = returnData.Split('|')[1..^1];
                     int i = 0;
@@ -125,7 +125,7 @@ namespace iFacialMocapTrackingModule
                 }
 
                 /// <summary>
-                /// Changes the facial data depending of the assignation recieved.
+                /// Changes the facial data depending of the assignation received.
                 /// </summary>
                 /// <param name="blend"></param>
                 void HandleChange(string blend, ref ILogger logger)
@@ -147,21 +147,21 @@ namespace iFacialMocapTrackingModule
                             if (values.Length == 6)
                                 _trackedData.head = values;
                             else
-                                logger.LogWarning("Insuficient data to assign head's position");
+                                logger.LogWarning("Insufficient data to assign head's position");
                         }
                         else if (assignVal[0] == "rightEye")
                         {
                             if (values.Length == 3)
                                 _trackedData.rightEye = values;
                             else
-                                logger.LogWarning("Insuficient data to assign right eye's position");
+                                logger.LogWarning("Insufficient data to assign right eye's position");
                         }
                         else if (assignVal[0] == "leftEye")
                         {
                             if (values.Length == 3)
                                 _trackedData.leftEye = values;
                             else
-                                logger.LogWarning("Insuficient data to assign left eye's position");
+                                logger.LogWarning("Insufficient data to assign left eye's position");
                         }
                         else
                         {
