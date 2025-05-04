@@ -46,7 +46,7 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
                 UpdateData();
             }
             // Add a delay or halt for the next update cycle for performance. eg: 
-            Thread.Sleep(1);
+            Thread.Sleep(10);
         }
     }
 
@@ -81,11 +81,14 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
                 server.FaceData.BlendValue("eyeBlink_R") * server.FaceData.BlendValue("eyeSquint_R")));
 
         #endregion
+
+        //// ===== iFacialMocap output by default (from ARKit) mirrors R/L because it's normal use-case is in a application acting as a mirror!!! ===== ////
+
         #region Eye Blends
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeSquintLeft].Weight = server.FaceData.BlendValue("eyeSquint_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeSquintRight].Weight = server.FaceData.BlendValue("eyeSquint_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeWideLeft].Weight = server.FaceData.BlendValue("eyeWide_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeWideRight].Weight = server.FaceData.BlendValue("eyeWide_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeSquintLeft].Weight = server.FaceData.BlendValue("eyeSquint_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeSquintRight].Weight = server.FaceData.BlendValue("eyeSquint_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeWideLeft].Weight = server.FaceData.BlendValue("eyeWide_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeWideRight].Weight = server.FaceData.BlendValue("eyeWide_L");
         #endregion
         #region Pupil
         //EyeDilation & EyeConstrict default in mid value idk
@@ -95,31 +98,31 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         UnifiedTracking.Data.Eye._maxDilation = 10;
         #endregion
         #region Eye Brow
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowInnerUpLeft].Weight = server.FaceData.BlendValue("browInnerUp_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowLowererLeft].Weight = server.FaceData.BlendValue("browDown_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowOuterUpLeft].Weight = server.FaceData.BlendValue("browOuterUp_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowPinchLeft].Weight = server.FaceData.BlendValue("browDown_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowInnerUpLeft].Weight = server.FaceData.BlendValue("browInnerUp_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowLowererLeft].Weight = server.FaceData.BlendValue("browDown_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowOuterUpLeft].Weight = server.FaceData.BlendValue("browOuterUp_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowPinchLeft].Weight = server.FaceData.BlendValue("browDown_R");
 
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowInnerUpRight].Weight = server.FaceData.BlendValue("browInnerUp_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowLowererRight].Weight = server.FaceData.BlendValue("browDown_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowOuterUpRight].Weight = server.FaceData.BlendValue("browOuterUp_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowPinchRight].Weight = server.FaceData.BlendValue("browDown_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowInnerUpRight].Weight = server.FaceData.BlendValue("browInnerUp_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowLowererRight].Weight = server.FaceData.BlendValue("browDown_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowOuterUpRight].Weight = server.FaceData.BlendValue("browOuterUp_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowPinchRight].Weight = server.FaceData.BlendValue("browDown_L");
         #endregion 
         #region Nose
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.NoseSneerLeft].Weight = server.FaceData.BlendValue("noseSneer_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.NoseSneerRight].Weight = server.FaceData.BlendValue("noseSneer_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.NoseSneerLeft].Weight = server.FaceData.BlendValue("noseSneer_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.NoseSneerRight].Weight = server.FaceData.BlendValue("noseSneer_L");
         //Default NasalDitalation & NasalConstrict
         #endregion
         #region Cheek
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekPuffLeft].Weight = server.FaceData.BlendValue("cheekPuff");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekSquintLeft].Weight = server.FaceData.BlendValue("cheekSquint_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekSquintLeft].Weight = server.FaceData.BlendValue("cheekSquint_R");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekPuffRight].Weight = server.FaceData.BlendValue("cheekPuff");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekSquintRight].Weight = server.FaceData.BlendValue("cheekSquint_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.CheekSquintRight].Weight = server.FaceData.BlendValue("cheekSquint_L");
         //No CheekSuck'ing lol
         #endregion
         #region Mewing
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.JawLeft].Weight = server.FaceData.BlendValue("jawLeft");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.JawRight].Weight = server.FaceData.BlendValue("jawRight");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.JawLeft].Weight = server.FaceData.BlendValue("jawRight");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.JawRight].Weight = server.FaceData.BlendValue("jawLeft");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.JawOpen].Weight = server.FaceData.BlendValue("jawOpen");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthClosed].Weight = server.FaceData.BlendValue("mouthClose");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.JawForward].Weight = server.FaceData.BlendValue("jawForward");
@@ -138,7 +141,7 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.LipFunnelLowerRight].Weight = server.FaceData.BlendValue("mouthFunnel");
 
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.LipSuckUpperLeft].Weight = Math.Min(
-            1f - (float)Math.Pow(server.FaceData.BlendValue("mouthUpperUp_L"), 1 / 6f),
+            1f - (float)Math.Pow(server.FaceData.BlendValue("mouthUpperUp_R"), 1 / 6f),
             server.FaceData.BlendValue("mouthRollUpper")
         );
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.LipSuckLowerLeft].Weight = server.FaceData.BlendValue("mouthRollLower");
@@ -153,33 +156,32 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthRaiserLower].Weight = server.FaceData.BlendValue("mouthShrugLower");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthRaiserUpper].Weight = server.FaceData.BlendValue("mouthShrugUpper");
 
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperLeft].Weight = server.FaceData.BlendValue("mouthLeft");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerLeft].Weight = server.FaceData.BlendValue("mouthLeft");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperUpLeft].Weight = server.FaceData.BlendValue("mouthUpperUp_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownLeft].Weight = server.FaceData.BlendValue("mouthLowerDown_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthCornerPullLeft].Weight = server.FaceData.BlendValue("mouthSmile_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownLeft].Weight = server.FaceData.BlendValue("mouthLowerDown_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthDimpleLeft].Weight = server.FaceData.BlendValue("mouthDimple_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthFrownLeft].Weight = server.FaceData.BlendValue("mouthFrown_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthPressLeft].Weight = server.FaceData.BlendValue("mouthPress_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthStretchLeft].Weight = server.FaceData.BlendValue("mouthStretch_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperLeft].Weight = server.FaceData.BlendValue("mouthRight");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerLeft].Weight = server.FaceData.BlendValue("mouthRight");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperUpLeft].Weight = server.FaceData.BlendValue("mouthUpperUp_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownLeft].Weight = server.FaceData.BlendValue("mouthLowerDown_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthCornerPullLeft].Weight = server.FaceData.BlendValue("mouthSmile_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownLeft].Weight = server.FaceData.BlendValue("mouthLowerDown_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthDimpleLeft].Weight = server.FaceData.BlendValue("mouthDimple_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthFrownLeft].Weight = server.FaceData.BlendValue("mouthFrown_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthPressLeft].Weight = server.FaceData.BlendValue("mouthPress_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthStretchLeft].Weight = server.FaceData.BlendValue("mouthStretch_R");
 
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperRight].Weight = server.FaceData.BlendValue("mouthRight");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerRight].Weight = server.FaceData.BlendValue("mouthRight");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperUpRight].Weight = server.FaceData.BlendValue("mouthUpperUp_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownRight].Weight = server.FaceData.BlendValue("mouthLowerDown_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthCornerPullRight].Weight = server.FaceData.BlendValue("mouthSmile_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownRight].Weight = server.FaceData.BlendValue("mouthLowerDown_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthDimpleRight].Weight = server.FaceData.BlendValue("mouthDimple_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthFrownRight].Weight = server.FaceData.BlendValue("mouthFrown_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthPressRight].Weight = server.FaceData.BlendValue("mouthPress_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthStretchRight].Weight = server.FaceData.BlendValue("mouthStretch_R");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperRight].Weight = server.FaceData.BlendValue("mouthLeft");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerRight].Weight = server.FaceData.BlendValue("mouthLeft");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperUpRight].Weight = server.FaceData.BlendValue("mouthUpperUp_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownRight].Weight = server.FaceData.BlendValue("mouthLowerDown_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthCornerPullRight].Weight = server.FaceData.BlendValue("mouthSmile_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownRight].Weight = server.FaceData.BlendValue("mouthLowerDown_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthDimpleRight].Weight = server.FaceData.BlendValue("mouthDimple_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthFrownRight].Weight = server.FaceData.BlendValue("mouthFrown_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthPressRight].Weight = server.FaceData.BlendValue("mouthPress_L");
+        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthStretchRight].Weight = server.FaceData.BlendValue("mouthStretch_L");
 
         //Default MouthUpperDeepenLeft, MouthCornerSlantLeft & MouthTightenerLeft
         #endregion
         #region Tongue
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.TongueOut].Weight = server.FaceData.BlendValue("tongueOut");
-        //Not sure if any more
         #endregion
     }
 }
