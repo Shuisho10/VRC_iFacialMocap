@@ -9,6 +9,9 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
     // What your interface is able to send as tracking data.
     public override (bool SupportsEye, bool SupportsExpression) Supported => (true, true);
 
+    // active tracking support
+    private (bool, bool) _trackingSupported = (false, false);
+
     // This is the first function ran by VRCFaceTracking. Make sure to completely initialize 
     // your tracking interface or the data to be accepted by VRCFaceTracking here. This will let 
     // VRCFaceTracking know what data is available to be sent from your tracking interface at initialization.
@@ -26,8 +29,9 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
 
         //... Initializing module. Modify state tuple as needed (or use bool contexts to determine what should be initialized).
         server.Connect(ref Logger);
-        var state = (server.isTracking, server.isTracking);
-        return state;
+        // only initialize what is available
+        _trackingSupported = (server.isTracking && eyeAvailable, server.isTracking && expressionAvailable);
+        return _trackingSupported;
     }
 
     // Polls data from the tracking interface.
@@ -36,18 +40,18 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
     {
         // Get latest tracking data from interface and transform to VRCFaceTracking data.
         server.ReadData(ref Logger);
-        if (server.isTracking)
+        if (server.isTracking && Status == ModuleState.Active)
         {
-            if (Status == ModuleState.Active) // Module Status validation
+            if (_trackingSupported.Item1)
             {
-                // ... Execute update cycle.
-                //UnifiedTracking.Data.Eye.Left.Openness = ExampleTracker.LeftEye.Openness;
-                //UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.JawOpen] = ExampleTracker.Mouth.JawOpen;
-                UpdateData();
+                UpdateEyeData();
             }
-            // Add a delay or halt for the next update cycle for performance. eg: 
-            Thread.Sleep(10);
+            if (_trackingSupported.Item2)
+            {
+                UpdateMouthData();
+            }
         }
+        Thread.Sleep(10);
     }
 
     // Called when the module is unloaded or VRCFaceTracking itself tears down.
@@ -57,7 +61,7 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         server.Stop();
     }
 
-    void UpdateData()
+    void UpdateEyeData()
     {
         //Could make a dict<UnifiedExpressions,string> or directly assigning Data.Shapes for better performance but can do math here so whatever for now.
         #region Eye Gaze
@@ -68,17 +72,17 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         //UnifiedTracking.Data.Eye.Right.Gaze.y = server.FaceData.BlendValue("eyeLookUp_R") - server.FaceData.BlendValue("eyeLookDown_R");
 
         // coordinate system is all wacky
-        UnifiedTracking.Data.Eye.Left.Gaze.x = -MathF.Tan(server.FaceData.leftEye[1] / 90.0f); // normalized range of -45 to 45 degrees, tan function
+        UnifiedTracking.Data.Eye.Left.Gaze.x = MathF.Tan(server.FaceData.leftEye[1] / 90.0f); // normalized range of -45 to 45 degrees, tan function
         UnifiedTracking.Data.Eye.Left.Gaze.y = -MathF.Tan(server.FaceData.leftEye[0] / 90.0f);
-        UnifiedTracking.Data.Eye.Right.Gaze.x = -MathF.Tan(server.FaceData.rightEye[1] / 90.0f);
+        UnifiedTracking.Data.Eye.Right.Gaze.x = MathF.Tan(server.FaceData.rightEye[1] / 90.0f);
         UnifiedTracking.Data.Eye.Right.Gaze.y = -MathF.Tan(server.FaceData.rightEye[0] / 90.0f);
         #endregion
         #region Eye Openness
-        UnifiedTracking.Data.Eye.Left.Openness = 1.0f - (float)Math.Max(0, Math.Min(1, server.FaceData.BlendValue("eyeBlink_L") +
-                server.FaceData.BlendValue("eyeBlink_L") * server.FaceData.BlendValue("eyeSquint_L")));
-
-        UnifiedTracking.Data.Eye.Right.Openness = 1.0f - (float)Math.Max(0, Math.Min(1, server.FaceData.BlendValue("eyeBlink_R") +
+        UnifiedTracking.Data.Eye.Left.Openness = 1.0f - (float)Math.Max(0, Math.Min(1, server.FaceData.BlendValue("eyeBlink_R") +
                 server.FaceData.BlendValue("eyeBlink_R") * server.FaceData.BlendValue("eyeSquint_R")));
+
+        UnifiedTracking.Data.Eye.Right.Openness = 1.0f - (float)Math.Max(0, Math.Min(1, server.FaceData.BlendValue("eyeBlink_L") +
+                server.FaceData.BlendValue("eyeBlink_L") * server.FaceData.BlendValue("eyeSquint_L")));
 
         #endregion
 
@@ -97,6 +101,10 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         UnifiedTracking.Data.Eye._minDilation = 0;
         UnifiedTracking.Data.Eye._maxDilation = 10;
         #endregion
+    }
+
+    void UpdateMouthData()
+    {
         #region Eye Brow
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowInnerUpLeft].Weight = server.FaceData.BlendValue("browInnerUp_R");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowLowererLeft].Weight = server.FaceData.BlendValue("browDown_R");

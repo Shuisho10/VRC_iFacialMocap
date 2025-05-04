@@ -3,9 +3,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
-using VRCFaceTracking;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace iFacialMocapTrackingModule
@@ -15,6 +12,7 @@ namespace iFacialMocapTrackingModule
         static private int _port = 49983; //port
         private FacialMocapData _trackedData = new();
         private UdpClient? _udpListener, _udpClient;
+        private IPEndPoint? _dstAddr;
         public bool isTracking;
         public FacialMocapData FaceData { get { return _trackedData; } }
 
@@ -27,61 +25,122 @@ namespace iFacialMocapTrackingModule
             FaceData.blends.Clear();
         }
         /// </summary>
-        public static string GetLocalIPAddress()
+        public static IEnumerable<string> GetLocalIPAddresses()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
             foreach (var ip in host.AddressList)
             {
                 if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
-                    return ip.ToString();
+                    yield return ip.ToString();
                 }
             }
-            throw new Exception("No connection found!");
         }
 
         /// <summary>
         /// Connects to the Facial Mockup server socket.
         /// </summary>
         /// <param name="ipaddress"></param>
-        public void Connect(ref ILogger logger, string ipaddress = "255.255.255.255")
+        public bool Connect(ref ILogger logger, string ipaddress = "255.255.255.255")
         {
+            isTracking = false;
+
             _udpListener = new(_port);
             _udpClient = new();
+            _dstAddr = new IPEndPoint(IPAddress.Any, _port);
 
             var timeToWait = TimeSpan.FromSeconds(120);
+            // compile list of IP addresses
+            string likelyIpAddressList = "";
+            string otherIpAddressList = "";
+            foreach (string ip in GetLocalIPAddresses())
+            {
+                if (!string.IsNullOrEmpty(ip))
+                {
+                    // reference for expected internal IP address format: https://www.okta.com/identity-101/internal-ip/
+                    string[] addressBytes = ip.Split('.');
+                    string networkPart = $"{addressBytes[0]}.{addressBytes[1]}";
 
-            logger.LogInformation($"Searching iFacialMocap data for {timeToWait.TotalSeconds} seconds on {GetLocalIPAddress()}:{_port}");
+                    // 192.168.0.0 to 192.168.255.255, which offers about 65,000 unique IP addresses 
+                    // 10.0.0.0 to 10.255.255.255, a range that provides up to 16 million unique IP addresses
+                    if (networkPart.Equals("192.168") || addressBytes[0].Equals("10"))
+                    {
+                        likelyIpAddressList += $"\n\t{ip}";
+                    }
+                    else if (addressBytes[0].Equals("172"))
+                    {
+                        // convert addressBytes[1] to integer
+                        int addressByte1 = 0;
+                        try
+                        {
+                            addressByte1 = int.Parse(addressBytes[1]);
+                        }
+                        catch (FormatException)
+                        {
+                            logger.LogError("Invalid IP address happened somehow..");
+                            continue;
+                        }
+                        // 172.16.0.0 to 172.31.255.255, providing about 1 million unique IP addresses 
+                        if (addressByte1 >= 16 && addressByte1 <= 31)
+                        {
+                            likelyIpAddressList += $"\n\t{ip}";
+                        }
+                    }
+                    else
+                    {
+                        otherIpAddressList += $"\n\t{ip}";
+                    }
+                }
+            }
+            if (likelyIpAddressList.Length == 0 && otherIpAddressList.Length == 0)
+            {
+                logger.LogError("No local network connection found!");
+                return false;
+            }
+            logger.LogInformation($"Seeking iFacialMocap connection for {timeToWait.TotalSeconds} seconds. " +
+                $"Accepting data on: \n\nIP Address(es)\n========================{likelyIpAddressList}\n========================\n\nUse default iFacialMocap Port: {_port}\n");
+            logger.LogDebug($"Other IP Addresses found: \n{otherIpAddressList}\n");
+
             var asyncResult = _udpListener.BeginReceive(null, null);
+
             asyncResult.AsyncWaitHandle.WaitOne(timeToWait);
             if (asyncResult.IsCompleted)
             {
                 try
                 {
+                    // EndReceive worked and we have received data and remote endpoint
+                    byte[] receivedBytes = _udpListener.EndReceive(asyncResult, ref _dstAddr);
+                    logger.LogInformation("Successful message receive");
 
-                    IPEndPoint dstAddr = new(IPAddress.Parse(ipaddress), _port);
+                    //IPEndPoint dstAddr = new(IPAddress.Parse(ipaddress), _port);
                     string data = "iFacialMocap_sahuasouryya9218sauhuiayeta91555dy3719|sendDataVersion=v2";
                     byte[] bytes = Encoding.UTF8.GetBytes(data);
-                    _udpClient.Send(bytes, bytes.Length, dstAddr);
+                    _udpClient.Send(bytes, bytes.Length, _dstAddr);
                     _udpListener.Client.ReceiveTimeout = 1000;
-                    logger.LogInformation($"Connecting to {GetLocalIPAddress()}:{_port}");
+                    if (_dstAddr == null)
+                    {
+                        logger.LogWarning("Something went really wrong! Could not identify remote endpoint");
+                        return false;
+                    }
+                    logger.LogInformation($"Connecting to {_dstAddr.Address}:{_dstAddr.Port}");
                     isTracking = true;
-
+                    return isTracking;
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Stop();
+                    // EndReceive failed and we ended up here
+                    logger.LogError($"Error Occurred Attempting Receiving Data: {ex.ToString()}");
                 }
-
             }
-
             else
             {
-                // Could not connect in time, close module
-                logger.LogWarning("Did not receive iFacialMocap data within initialization period, re-initialize the module to try again...");
-                isTracking = false;
-                return;
+                // The operation wasn't completed before the timeout and we're off the hook
+                // nothing init so return false
+                logger.LogWarning("Did not receive iFacialMocap message within initialization period, re-initialize the module to try again...");
+                return false;
             }
+
+            return false;
         }
 
 
