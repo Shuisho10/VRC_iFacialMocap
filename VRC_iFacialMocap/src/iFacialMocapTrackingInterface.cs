@@ -5,7 +5,7 @@ using VRCFaceTracking.Core.Params.Expressions;
 
 public class iFacialMocapTrackingInterface : ExtTrackingModule
 {
-    iFacialMocapServer server = new();
+    iFacialMocapServer? server;
     // What your interface is able to send as tracking data.
     public override (bool SupportsEye, bool SupportsExpression) Supported => (true, true);
 
@@ -28,7 +28,8 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
             stream != null ? new List<Stream> { stream } : ModuleInformation.StaticImages;
 
         //... Initializing module. Modify state tuple as needed (or use bool contexts to determine what should be initialized).
-        server.Connect(ref Logger);
+        server = new iFacialMocapServer(ref Logger);
+        server.Connect();
         // only initialize what is available
         _trackingSupported = (server.isTracking && eyeAvailable, server.isTracking && expressionAvailable);
         return _trackingSupported;
@@ -39,8 +40,8 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
     public override void Update()
     {
         // Get latest tracking data from interface and transform to VRCFaceTracking data.
-        server.ReadData(ref Logger);
-        if (server.isTracking && Status == ModuleState.Active)
+        //server.ReadData(ref Logger);
+        if (server != null && server.isTracking && Status == ModuleState.Active)
         {
             if (_trackingSupported.Item1)
             {
@@ -51,14 +52,15 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
                 UpdateMouthData();
             }
         }
-        Thread.Sleep(10);
+        // updates 250 times a second because there's no way someone is using a 240Hz camera and a model that outputs more than that.. 
+        Thread.Sleep(4);
     }
 
     // Called when the module is unloaded or VRCFaceTracking itself tears down.
     public override void Teardown()
     {
         //... Deinitialize tracking interface; dispose any data created with the module.
-        server.Stop();
+        server?.Stop();
     }
 
     void UpdateEyeData()
