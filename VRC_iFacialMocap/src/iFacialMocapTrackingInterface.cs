@@ -19,15 +19,10 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
     {
         ModuleInformation.Name = "iFacialMocap";
 
-        // Example of an embedded image stream being referenced as a stream
         var stream = GetType().Assembly.GetManifestResourceStream("VRCFT_iFacialMocap.res.logo.png");
-
-
-        // Setting the stream to be referenced by VRCFaceTracking.
         ModuleInformation.StaticImages =
             stream != null ? new List<Stream> { stream } : ModuleInformation.StaticImages;
 
-        //... Initializing module. Modify state tuple as needed (or use bool contexts to determine what should be initialized).
         server = new iFacialMocapServer(ref Logger);
         server.Connect();
         // only initialize what is available
@@ -39,20 +34,18 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
     // VRCFaceTracking will run this function in a separate thread;
     public override void Update()
     {
-        // Get latest tracking data from interface and transform to VRCFaceTracking data.
-        //server.ReadData(ref Logger);
         if (server != null && server.isTracking && Status == ModuleState.Active)
         {
             if (_trackingSupported.Item1)
             {
-                UpdateEyeData();
+                UpdateEyeData(server);
             }
             if (_trackingSupported.Item2)
             {
-                UpdateMouthData();
+                UpdateMouthData(server);
             }
-            
-            UpdateHeadData();
+
+            UpdateHeadData(server);
         }
         // updates 250 times a second because there's no way someone is using a 240Hz camera and a model that outputs more than that.. 
         Thread.Sleep(4);
@@ -61,11 +54,10 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
     // Called when the module is unloaded or VRCFaceTracking itself tears down.
     public override void Teardown()
     {
-        //... Deinitialize tracking interface; dispose any data created with the module.
         server?.Stop();
     }
 
-    void UpdateEyeData()
+    void UpdateEyeData(iFacialMocapServer server)
     {
         //Could make a dict<UnifiedExpressions,string> or directly assigning Data.Shapes for better performance but can do math here so whatever for now.
         #region Eye Gaze
@@ -76,10 +68,12 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         //UnifiedTracking.Data.Eye.Right.Gaze.y = server.FaceData.BlendValue("eyeLookUp_R") - server.FaceData.BlendValue("eyeLookDown_R");
 
         // coordinate system is all wacky
-        UnifiedTracking.Data.Eye.Left.Gaze.x = MathF.Tan(server.FaceData.leftEye[1] / 90.0f); // normalized range of -45 to 45 degrees, tan function
-        UnifiedTracking.Data.Eye.Left.Gaze.y = -MathF.Tan(server.FaceData.leftEye[0] / 90.0f);
-        UnifiedTracking.Data.Eye.Right.Gaze.x = MathF.Tan(server.FaceData.rightEye[1] / 90.0f);
-        UnifiedTracking.Data.Eye.Right.Gaze.y = -MathF.Tan(server.FaceData.rightEye[0] / 90.0f);
+        // Empirical calibration: iFacialMocap reports eye angle in degrees; full deflection is ~this many degrees. Retune if clipping/undershoot observed.
+        const float maxGazeAngleDegrees = 30.0f;
+        UnifiedTracking.Data.Eye.Left.Gaze.x = Math.Clamp(server.FaceData.leftEye[1] / maxGazeAngleDegrees, -1f, 1f);
+        UnifiedTracking.Data.Eye.Left.Gaze.y = -Math.Clamp(server.FaceData.leftEye[0] / maxGazeAngleDegrees, -1f, 1f);
+        UnifiedTracking.Data.Eye.Right.Gaze.x = Math.Clamp(server.FaceData.rightEye[1] / maxGazeAngleDegrees, -1f, 1f);
+        UnifiedTracking.Data.Eye.Right.Gaze.y = -Math.Clamp(server.FaceData.rightEye[0] / maxGazeAngleDegrees, -1f, 1f);
         #endregion
         #region Eye Openness
         UnifiedTracking.Data.Eye.Left.Openness = 1.0f - (float)Math.Max(0, Math.Min(1, server.FaceData.BlendValue("eyeBlink_R") +
@@ -107,7 +101,7 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         #endregion
     }
 
-    void UpdateMouthData()
+    void UpdateMouthData(iFacialMocapServer server)
     {
         #region Eye Brow
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowInnerUpLeft].Weight = server.FaceData.BlendValue("browInnerUp_R");
@@ -173,7 +167,6 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperUpLeft].Weight = server.FaceData.BlendValue("mouthUpperUp_R");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownLeft].Weight = server.FaceData.BlendValue("mouthLowerDown_R");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthCornerPullLeft].Weight = server.FaceData.BlendValue("mouthSmile_R");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownLeft].Weight = server.FaceData.BlendValue("mouthLowerDown_R");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthDimpleLeft].Weight = server.FaceData.BlendValue("mouthDimple_R");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthFrownLeft].Weight = server.FaceData.BlendValue("mouthFrown_R");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthPressLeft].Weight = server.FaceData.BlendValue("mouthPress_R");
@@ -184,7 +177,6 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthUpperUpRight].Weight = server.FaceData.BlendValue("mouthUpperUp_L");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownRight].Weight = server.FaceData.BlendValue("mouthLowerDown_L");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthCornerPullRight].Weight = server.FaceData.BlendValue("mouthSmile_L");
-        UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthLowerDownRight].Weight = server.FaceData.BlendValue("mouthLowerDown_L");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthDimpleRight].Weight = server.FaceData.BlendValue("mouthDimple_L");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthFrownRight].Weight = server.FaceData.BlendValue("mouthFrown_L");
         UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.MouthPressRight].Weight = server.FaceData.BlendValue("mouthPress_L");
@@ -197,7 +189,7 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         #endregion
     }
 
-    void UpdateHeadData()
+    void UpdateHeadData(iFacialMocapServer server)
     {
         UnifiedTracking.Data.Head.HeadPitch = server.FaceData.head[0] / 100;
         UnifiedTracking.Data.Head.HeadYaw = server.FaceData.head[1] / 100;

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
@@ -10,14 +9,13 @@ namespace iFacialMocapTrackingModule
 {
     class iFacialMocapServer
     {
-        static private int _port = 49983; //port
+        private const int Port = 49983;
         private FacialMocapData _trackedData = new();
         private UdpClient? _udpListener, _udpClient;
         private IPEndPoint? _remoteIpEndPoint;
         public bool isTracking;
         private ILogger _logger;
 
-        private Thread? _receiveThread;
         private CancellationTokenSource _cts;
 
         // call it a disconnect if we stop receiving after 5 seconds
@@ -55,14 +53,18 @@ namespace iFacialMocapTrackingModule
         /// <summary>
         /// Connects to the Facial Mockup server socket.
         /// </summary>
-        /// <param name="ipaddress"></param>
-        public bool Connect(string ipaddress = "255.255.255.255")
+        public bool Connect()
         {
             isTracking = false;
 
-            _udpListener = new(_port);
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+            if (_udpClient != null) { _udpClient.Close(); _udpClient.Dispose(); }
+            if (_udpListener != null) { _udpListener.Close(); _udpListener.Dispose(); }
+
+            _udpListener = new(Port);
             _udpClient = new();
-            _remoteIpEndPoint = new IPEndPoint(IPAddress.Any, _port);
+            _remoteIpEndPoint = new IPEndPoint(IPAddress.Any, Port);
 
             var timeToWait = TimeSpan.FromSeconds(120);
             // compile list of IP addresses
@@ -113,7 +115,7 @@ namespace iFacialMocapTrackingModule
                 return false;
             }
             _logger.LogInformation($"Seeking iFacialMocap connection for {timeToWait.TotalSeconds} seconds. " +
-                $"Accepting data on: \n\nIP Address(es)\n========================{likelyIpAddressList}\n========================\n\nUse default iFacialMocap Port: {_port}\n");
+                $"Accepting data on: \n\nIP Address(es)\n========================{likelyIpAddressList}\n========================\n\nUse default iFacialMocap Port: {Port}\n");
             _logger.LogDebug($"Other IP Addresses found: \n{otherIpAddressList}\n");
 
             var asyncResult = _udpListener.BeginReceive(null, null);
@@ -127,12 +129,9 @@ namespace iFacialMocapTrackingModule
                     byte[] receivedBytes = _udpListener.EndReceive(asyncResult, ref _remoteIpEndPoint);
                     _logger.LogInformation("Successful message receive");
 
-                    //IPEndPoint dstAddr = new(IPAddress.Parse(ipaddress), _port);
                     string data = "iFacialMocap_sahuasouryya9218sauhuiayeta91555dy3719|sendDataVersion=v2";
                     byte[] bytes = Encoding.UTF8.GetBytes(data);
                     _udpClient.Send(bytes, bytes.Length, _remoteIpEndPoint);
-                    // for synchronous receives, which ReceiveAsync won't use...
-                    _udpListener.Client.ReceiveTimeout = 1000;
                     if (_remoteIpEndPoint == null)
                     {
                         _logger.LogWarning("Something went really wrong! Could not identify remote endpoint");
@@ -141,9 +140,6 @@ namespace iFacialMocapTrackingModule
                     _logger.LogInformation($"Connecting to {_remoteIpEndPoint.Address}:{_remoteIpEndPoint.Port}");
                     isTracking = true;
 
-                    // start async thread for receive
-                    //_receiveThread = new Thread(async () => await ReadDataThread());
-                    //_receiveThread.Start();
                     Task.Run(() => ReadDataThread());
 
                     return isTracking;
@@ -187,15 +183,11 @@ namespace iFacialMocapTrackingModule
            {
                 //IPEndPoint? RemoteIpEndPoint = null;
                 try {
-                    CancellationTokenSource receiveTimeOutCTS = new();
+                    using CancellationTokenSource receiveTimeOutCTS = new();
                     receiveTimeOutCTS.CancelAfter(_receiveTimeoutMs);
-                    CancellationTokenSource linkedCTS = CancellationTokenSource.CreateLinkedTokenSource(receiveTimeOutCTS.Token, _cts.Token);
+                    using CancellationTokenSource linkedCTS = CancellationTokenSource.CreateLinkedTokenSource(receiveTimeOutCTS.Token, _cts.Token);
                     var receiveTask = _udpListener.ReceiveAsync(linkedCTS.Token);
                     await receiveTask;
-                    if (!receiveTask.IsCompleted)
-                    {
-                        throw new TimeoutException();
-                    }
                     string returnData = Encoding.ASCII.GetString(receiveTask.Result.Buffer);
                     if (isTracking == false)
                     {
@@ -210,11 +202,11 @@ namespace iFacialMocapTrackingModule
                         i++;
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     if (isTracking)
                     {
-                        _logger.LogError("Module failed to receive message from iFacialMocap after 5 seconds, waiting for reconnection...");
+                        _logger.LogError($"Module failed to receive message from iFacialMocap after 5 seconds, waiting for reconnection... [{e.Message}]");
                     }
                     isTracking = false;
                 }

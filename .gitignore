@@ -2,6 +2,9 @@ VRC_iFacialMocap/bin
 VRC_iFacialMocap/obj
 VRC_iFacialMocap/packages
 VRCFaceTracking.Core.dll
+VRCFaceTracking.SDK.dll
 *.suo
 *.user
 _ReSharper.*
+*.xml
+*.xml
