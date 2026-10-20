@@ -69,9 +69,9 @@ public class iFacialMocapTrackingInterface : ExtTrackingModule
         #region Eye Gaze
         // positive x is to the *right*
         // The original code has this commented and uses the section below, i prefer blendshape usage due to the -1 to 1 OSC value
-        UnifiedTracking.Data.Eye.Left.Gaze.x = server.FaceData.BlendValue("eyeLookIn_L") - server.FaceData.BlendValue("eyeLookOut_L");
+        UnifiedTracking.Data.Eye.Left.Gaze.x = server.FaceData.BlendValue("eyeLookOut_L") - server.FaceData.BlendValue("eyeLookIn_L");
         UnifiedTracking.Data.Eye.Left.Gaze.y = server.FaceData.BlendValue("eyeLookUp_L") - server.FaceData.BlendValue("eyeLookDown_L");
-        UnifiedTracking.Data.Eye.Right.Gaze.x = server.FaceData.BlendValue("eyeLookOut_R") - server.FaceData.BlendValue("eyeLookIn_R");
+        UnifiedTracking.Data.Eye.Right.Gaze.x = server.FaceData.BlendValue("eyeLookIn_R") - server.FaceData.BlendValue("eyeLookOut_R");
         UnifiedTracking.Data.Eye.Right.Gaze.y = server.FaceData.BlendValue("eyeLookUp_R") - server.FaceData.BlendValue("eyeLookDown_R");
 
         // coordinate system is all wacky
