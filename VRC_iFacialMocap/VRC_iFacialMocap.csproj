@@ -7,7 +7,7 @@
 	  <Nullable>enable</Nullable>
 	  <Platforms>AnyCPU;x64</Platforms>
 	  <BaseOutputPath></BaseOutputPath>
-	<AssemblyVersion>1.0</AssemblyVersion>
+	<AssemblyVersion>2.0.0</AssemblyVersion>
   </PropertyGroup>
 
 	<ItemGroup>
@@ -26,15 +26,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Properties\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <Reference Include="VRCFaceTracking.Core">
-	    <HintPath>..\..\cores\VRCFaceTracking.Core.dll</HintPath>
+	    <HintPath>cores\VRCFaceTracking.Core.dll</HintPath>
 	  </Reference>
 	  <Reference Include="VRCFaceTracking.SDK">
-	    <HintPath>..\..\cores\VRCFaceTracking.SDK.dll</HintPath>
+	    <HintPath>cores\VRCFaceTracking.SDK.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
 
